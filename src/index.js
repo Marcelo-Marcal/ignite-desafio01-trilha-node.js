@@ -10,8 +10,8 @@ app.use(express.json());
 
 const users = [];
 
-//Middleware
-function checksExistsUserAccount(request, response, next) {
+//Middlewares
+const checksExistsUserAccount = (request, response, next) => {
   const { username } = request.headers;
 
   const userAlreadyExists = users.find((user) => username === user.username);
@@ -22,23 +22,31 @@ function checksExistsUserAccount(request, response, next) {
   request.user = userAlreadyExists;
 
   return next();
-}
+};
 
 app.post("/users", (request, response) => {
   const { name, username } = request.body;
-  const id = uuidv4();
 
-  users.push({
-    id,
+  const userAlreadyExists = users.some((user) => user.username === username);
+  if (userAlreadyExists) {
+    return response.status(400).json({ error: "User already exist" });
+  }
+  const user = {
+    id: uuid(),
     name,
     username,
     todos: [],
-  });
-  return response.status(201).send();
+  };
+  users.push(user);
+
+  return response.status(201).json(user);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const {
+    user: { todo },
+  } = request;
+  return response.status(200).json(todos);
 });
 
 app.post("/todos", checksExistsUserAccount, (request, response) => {
